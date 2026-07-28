@@ -1,18 +1,24 @@
 package main
 
 import (
-	// "encoding/csv"
 	"encoding/csv"
 	"errors"
 	"fmt"
 	"os"
-	"slices"
 	"strconv"
-	// "time"
+	"text/tabwriter"
+	"time"
 	"github.com/mergestat/timediff"
 )
 
-var tasks []string
+type task struct{ // this made life so much easier
+	taskId int
+	desc string
+	time time.Time
+	status bool
+}
+
+var tasks []task
 
 const filename string = "data.csv"
 
@@ -32,52 +38,63 @@ func getFile() {
 	file.Close()
 }
 
-func moppleCreate(task string) error {
-	f1, err := os.OpenFile(filename, os.O_APPEND|os.O_WRONLY, 0644)
+func loadTasks() {
+	file, err := os.Open(filename)
 	if err != nil {
 		panic(err)
 	}
-	row := []string{strconv.Itoa(noOfTasks + 1), task, "9:19", "pending"}
-	writer := csv.NewWriter(f1)
-	writer.Write(row)
-	writer.Flush()
-	f1.Close()
-
-	tasks = append(tasks, task) // this creates a new slice with appended elements
-	// time := time.Now() // this gives type time.Time
-	noOfTasks++
-	return errors.New("task sucessfully created")
-}
-
-func moppleDelete(taskId int) error {
-	if taskId > len(tasks) {
-		return errors.New("nothing to delete")
-	}
-	tasks = slices.Delete(tasks, taskId-1, taskId)
-	return errors.New("task sucessfully deleted")
-}
-
-func moppleList() error {
-	file, err := os.Open(filename)
-	if err != nil{
-		panic(err)
-	}
-	defer file.Close()
 
 	reader := csv.NewReader(file)
 	data, err := reader.ReadAll()
-	if err != nil{
+	if err != nil {
 		panic(err)
 	}
-	for _, row := range data{
-		for _, col := range row{
-			fmt.Printf("%s, ", col)
+	for i, row := range data {
+		if i != 0 {
+			for j, col := range row{
+				switch j{
+				case 0:
+					tasks[i].taskId, _ = strconv.Atoi(col)
+				case 1:
+					tasks[i].desc = col
+				case 2:
+					layout := "2006-01-02 15:04:05"
+					tasks[i].time, _ = time.Parse(layout, col)
+				case 3:
+					tasks[i].status, _ = strconv.ParseBool(col)
+
+				}
+			}
 		}
-		fmt.Println()
 	}
-	
-	for index, task := range tasks {
-		fmt.Println(index+1, "->", task)
+	file.Close()
+}
+
+func moppleCreate(d string) error {
+
+	noOfTasks++
+	newTask := task{taskId: noOfTasks, desc: d,time: time.Now(), status: false}
+
+	tasks = append(tasks, newTask) // this creates a new slice with appended elements
+	return errors.New("task sucessfully created")
+}
+
+// func moppleDelete(taskId int) error { -> most probably to delete the struct in the array which is easy
+// 	if taskId > len(tasks) {
+// 		return errors.New("nothing to delete")
+// 	}
+// 	tasks = slices.Delete(tasks, taskId-1, taskId)
+// 	return errors.New("task sucessfully deleted")
+// }
+
+func moppleList() error {
+	w := tabwriter.NewWriter(os.Stdout, 0, 0, 1, ' ', 0)
+
+	fmt.Fprintln(w, "TaskId\tDescription\tTime\tStatus")
+	for _, task := range tasks{
+		time := timediff.TimeDiff(task.time)
+		fmt.Fprintf(w,"%s\t%s\t%s\t%s\n", strconv.Itoa(task.taskId), task.desc, time, strconv.FormatBool(task.status))
 	}
+	w.Flush() // this is critical
 	return errors.New("list of tasks retrieved")
 }
