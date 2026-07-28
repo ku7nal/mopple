@@ -1,6 +1,10 @@
 package main
 
-func main(){
-	moppleCreate("tidy my desk")
+// import "fmt"
+
+func main() {
+	getFile()
+	moppleCreate("listen to mariah carrey")
+	moppleCreate("feel the pain")
 	moppleList()
-}
+	}

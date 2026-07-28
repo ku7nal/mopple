@@ -11,3 +11,5 @@ github.com/mergestat/timediff for displaying relative friendly time differences 
 3. mopple list -> list all rows in csv file -- tabwriter, timediff, csv, strconv
 4. mopple tick <task id> -> completes the task
 5. mopple delete <task id>
+
+> any files in a single directory is a single package and must have same package name -- random russian guy

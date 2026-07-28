@@ -20,6 +20,12 @@ func TestMain(t *testing.T) {
 
 		assertError(t, err, "list of tasks retrieved")
 	})
+
+	t.Run("try to remove the task from empty list", func(t *testing.T) {
+		err := moppleDelete(2)
+
+		assertError(t, err, "nothing to delete")
+	})
 }
 
 func assertError(t testing.TB, err error, want string) {
