@@ -16,6 +16,9 @@ var doneCmd = &cobra.Command{
 Args: cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 
+		// get file
+		getFile()
+
 		// get the argument and convert the string to int
 		id, _ := strconv.Atoi(args[0])
 

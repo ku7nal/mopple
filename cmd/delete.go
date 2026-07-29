@@ -16,6 +16,9 @@ var deleteCmd = &cobra.Command{
 	Args: cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 
+		// get file
+		getFile()
+
 		// get the areguement string and convert it to int 
 		taskid , _:= strconv.Atoi(args[0])
 
