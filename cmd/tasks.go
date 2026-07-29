@@ -1,5 +1,7 @@
 package cmd
 
+// TODO: further the error handling
+
 // Depenendencies
 import (
 	"encoding/csv"
@@ -78,7 +80,17 @@ func moppleList() error {
 		errorCheck(err, nil)
 
 		diff := timediff.TimeDiff(gettimetype)
-		fmt.Fprintf(w, "%s\t%s\t%s\t%s\n", strconv.Itoa(task.taskId), task.desc, diff, strconv.FormatBool(task.status))
+
+		// bool passing for aesthetic
+		var symbol rune
+		if task.status == true{
+			symbol = '󰄮'
+		}else{
+			symbol = '󰄱'
+		}
+
+		
+		fmt.Fprintf(w, "%s\t%s\t%s\t%s\n", strconv.Itoa(task.taskId), task.desc, diff, string(symbol))
 	}
 	w.Flush()
 
