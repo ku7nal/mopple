@@ -22,7 +22,7 @@ type task struct {
 
 var tasks []task
 
-const filename string = "~/code/mopple/data.csv"
+const filename string = "data.csv"
 
 var noOfTasks = 0
 
@@ -121,7 +121,14 @@ func loadTasks() {
 		}
 		tasks = append(tasks, newData)
 	}
-	noOfTasks, _ = strconv.Atoi(data[len(data)-1][0]) // updating the task count
+
+	// if there is no data
+	if len(data) > 0{
+		noOfTasks, _ = strconv.Atoi(data[len(data)-1][0]) // updating the task count
+	}else {
+		noOfTasks = 0
+	}
+
 	file.Close()
 }
 
