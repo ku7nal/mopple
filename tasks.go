@@ -18,11 +18,8 @@ type task struct { // this made life so much easier
 	time   string
 	status bool
 }
-
-var tasks []task
-
+var tasks []task // this is the data structures that holds the data from csv
 const filename string = "data.csv"
-
 var noOfTasks int = 0
 
 func getFile() {
@@ -54,7 +51,7 @@ func loadTasks() {
 		panic(err)
 	}
 	for _, row := range data {
-		idfrom, _:= strconv.Atoi(row[0])
+		idfrom, _ := strconv.Atoi(row[0])
 		statfrom, _ := strconv.ParseBool(row[3])
 		newData := task{
 			taskId: idfrom,
@@ -64,6 +61,8 @@ func loadTasks() {
 		}
 		tasks = append(tasks, newData)
 	}
+	noOfTasks = len(data)
+	fmt.Println(": ", noOfTasks)
 	file.Close()
 }
 
@@ -87,25 +86,46 @@ func writeToFile() {
 }
 
 func moppleCreate(d string) error { // this will recreate the file with modified (appended) content
+	file, err := os.OpenFile(filename, os.O_APPEND|os.O_WRONLY, 0644)
+	if err != nil {
+		panic(err)
+	}
 
-	noOfTasks++
 	newTask := task{taskId: noOfTasks, desc: d, time: time.Now().Format("2006-01-02 15:04:05"), status: false}
-
 	tasks = append(tasks, newTask) // this creates a new slice with appended elements
+	noOfTasks++
+
+	writer := csv.NewWriter(file)
+	var inputline []string
+	inputline = append(inputline, strconv.Itoa(newTask.taskId))
+	inputline = append(inputline, newTask.desc)
+	inputline = append(inputline, newTask.time)
+	inputline = append(inputline, strconv.FormatBool(newTask.status))
+	writer.Write(inputline)
+	writer.Flush()
+	file.Close()
+
 	return errors.New("task sucessfully created")
 }
 
-// func moppleDelete(taskId int) error { -> most probably to delete the struct in the array which is easy
-// 	if taskId > len(tasks) {
-// 		return errors.New("nothing to delete")
-// 	}
-// 	tasks = slices.Delete(tasks, taskId-1, taskId)
-// 	return errors.New("task sucessfully deleted")
-// }
-
-func letmesee() {
-	fmt.Println(tasks)
+func moppleDelete(taskId int) error { //-> most probably to delete the struct in the array which is easy
+	if taskId > len(tasks) {
+		return errors.New("nothing to delete")
+	}
+	tasks = remElem(taskId, tasks)
+	writeToFile()
+	return errors.New("task sucessfully deleted")
 }
+
+func remElem(t int, tslice []task) []task{
+	for idx, v := range tslice{
+		if v.taskId == t{
+			return append(tslice[0:idx], tslice[idx+1:]...)
+		}
+	}
+	return  tslice
+}
+
 func moppleList() error {
 	w := tabwriter.NewWriter(os.Stdout, 0, 0, 1, ' ', 0)
 

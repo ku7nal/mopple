@@ -1,9 +1,11 @@
+/*
+Copyright © 2026 Kunal Kokande
+
+*/
 package main
 
+import "github.com/ku7nal/mopple/cmd"
+
 func main() {
-	getFile()
-	loadTasks()
-	moppleCreate("listen to mariah carrey")
-	moppleList()
-	writeToFile()
-	}
+	cmd.Execute()
+}
