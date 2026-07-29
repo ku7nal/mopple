@@ -1,4 +1,4 @@
-package main
+package cmd
 
 import (
 	"encoding/csv"
@@ -8,7 +8,6 @@ import (
 	"strconv"
 	"text/tabwriter"
 	"time"
-
 	"github.com/mergestat/timediff"
 )
 
@@ -20,7 +19,7 @@ type task struct { // this made life so much easier
 }
 var tasks []task // this is the data structures that holds the data from csv
 const filename string = "data.csv"
-var noOfTasks int = 0
+var noOfTasks = 0// this must be loaded from the csv file
 
 func getFile() {
 	_, err := os.Stat(filename)
@@ -39,7 +38,7 @@ func getFile() {
 	}
 }
 
-func loadTasks() {
+func loadTasks(){
 	file, err := os.Open(filename)
 	if err != nil {
 		panic(err)
@@ -61,8 +60,8 @@ func loadTasks() {
 		}
 		tasks = append(tasks, newData)
 	}
-	noOfTasks = len(data)
-	fmt.Println(": ", noOfTasks)
+	noOfTasks, _ = strconv.Atoi(data[len(data)-1][0])
+	// noOfTasks = len(data)
 	file.Close()
 }
 
@@ -90,10 +89,9 @@ func moppleCreate(d string) error { // this will recreate the file with modified
 	if err != nil {
 		panic(err)
 	}
-
+	noOfTasks++
 	newTask := task{taskId: noOfTasks, desc: d, time: time.Now().Format("2006-01-02 15:04:05"), status: false}
 	tasks = append(tasks, newTask) // this creates a new slice with appended elements
-	noOfTasks++
 
 	writer := csv.NewWriter(file)
 	var inputline []string
@@ -120,13 +118,13 @@ func moppleDelete(taskId int) error { //-> most probably to delete the struct in
 func remElem(t int, tslice []task) []task{
 	for idx, v := range tslice{
 		if v.taskId == t{
-			return append(tslice[0:idx], tslice[idx+1:]...)
+			return append(tslice[:idx], tslice[idx+1:]...)
 		}
 	}
 	return  tslice
 }
 
-func moppleList() error {
+func moppleList() error { // lists from the slice of structs
 	w := tabwriter.NewWriter(os.Stdout, 0, 0, 1, ' ', 0)
 
 	fmt.Fprintln(w, "TaskId\tDescription\tTime\tStatus")
@@ -141,4 +139,13 @@ func moppleList() error {
 	}
 	w.Flush() // this is critical
 	return errors.New("list of tasks retrieved")
+}
+
+func doneTask(id int){
+	for i := range tasks{
+		if tasks[i].taskId == id{
+			tasks[i].status = true
+		}
+	}
+	writeToFile()
 }
