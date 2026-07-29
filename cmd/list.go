@@ -14,6 +14,9 @@ var listCmd = &cobra.Command{
 	Short: "List all tasks",
 	Run: func(cmd *cobra.Command, args []string) {
 
+		// get the file
+		getFile()
+
 		// load file into []tasks
 		loadTasks()
 
