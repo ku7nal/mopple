@@ -1,54 +1,115 @@
 package cmd
 
+// Depenendencies
 import (
 	"encoding/csv"
 	"errors"
 	"fmt"
+	"github.com/mergestat/timediff"
 	"os"
 	"strconv"
 	"text/tabwriter"
 	"time"
-	"github.com/mergestat/timediff"
 )
 
-type task struct { // this made life so much easier
+// Data Management
+type task struct {
 	taskId int
 	desc   string
 	time   string
 	status bool
 }
-var tasks []task // this is the data structures that holds the data from csv
-const filename string = "data.csv"
-var noOfTasks = 0// this must be loaded from the csv file
 
+var tasks []task
+
+const filename string = "~/code/mopple/data.csv"
+
+var noOfTasks = 0
+
+// Creating the Task
+func moppleCreate(d string) error {
+	file, err := os.OpenFile(filename, os.O_APPEND|os.O_WRONLY, 0644)
+	errorCheck(err, nil)
+
+	// tracking the no of tasks
+	noOfTasks++
+
+	// creating a new slice with appended elements
+	newTask := task{taskId: noOfTasks, desc: d, time: time.Now().Format("2006-01-02 15:04:05"), status: false}
+	tasks = append(tasks, newTask)
+
+	// writing the task to the csv file
+	writer := csv.NewWriter(file)
+	var inputline []string
+	inputline = append(inputline, strconv.Itoa(newTask.taskId))
+	inputline = append(inputline, newTask.desc)
+	inputline = append(inputline, newTask.time)
+	inputline = append(inputline, strconv.FormatBool(newTask.status))
+	writer.Write(inputline)
+	writer.Flush()
+	file.Close()
+
+	return errors.New("task sucessfully created")
+}
+
+// Deleting the Task
+func moppleDelete(taskId int) error {
+
+	if taskId > len(tasks) {
+		return errors.New("nothing to delete")
+	}
+
+	tasks = removeElement(taskId, tasks)
+	writeToFile()
+	return errors.New("task sucessfully deleted")
+}
+
+// Listing the Tasks
+func moppleList() error {
+
+	// specified format
+	w := tabwriter.NewWriter(os.Stdout, 0, 0, 1, ' ', 0)
+	fmt.Fprintln(w, "TaskId\tDescription\tTime\tStatus")
+
+	// parsing data to render with formatting
+	for _, task := range tasks {
+		loc := time.Now().Location()
+		gettimetype, err := time.ParseInLocation("2006-01-02 15:04:05", task.time, loc)
+		errorCheck(err, nil)
+
+		diff := timediff.TimeDiff(gettimetype)
+		fmt.Fprintf(w, "%s\t%s\t%s\t%s\n", strconv.Itoa(task.taskId), task.desc, diff, strconv.FormatBool(task.status))
+	}
+	w.Flush()
+
+	return errors.New("list of tasks retrieved")
+}
+
+// Checking for the csv file | Creating the csv file
 func getFile() {
 	_, err := os.Stat(filename)
 	if os.IsNotExist(err) {
 		file, err := os.Create(filename)
-		if err != nil {
-			panic(err)
-		}
+		errorCheck(err, nil)
+
 		file.Close()
 	} else {
 		file, err := os.Open(filename)
-		if err != nil {
-			panic(err)
-		}
+		errorCheck(err, nil)
+
 		file.Close()
 	}
 }
 
-func loadTasks(){
+// Loading the Data into the Slice [csv => tasks]
+func loadTasks() {
 	file, err := os.Open(filename)
-	if err != nil {
-		panic(err)
-	}
+	errorCheck(err, nil)
 
 	reader := csv.NewReader(file)
 	data, err := reader.ReadAll()
-	if err != nil {
-		panic(err)
-	}
+	errorCheck(err, nil)
+
 	for _, row := range data {
 		idfrom, _ := strconv.Atoi(row[0])
 		statfrom, _ := strconv.ParseBool(row[3])
@@ -60,16 +121,15 @@ func loadTasks(){
 		}
 		tasks = append(tasks, newData)
 	}
-	noOfTasks, _ = strconv.Atoi(data[len(data)-1][0])
-	// noOfTasks = len(data)
+	noOfTasks, _ = strconv.Atoi(data[len(data)-1][0]) // updating the task count
 	file.Close()
 }
 
+// Writing the data from Slice to csv file [tasks => csv]
 func writeToFile() {
 	file, err := os.Create(filename)
-	if err != nil {
-		panic(err)
-	}
+
+	errorCheck(err, nil)
 
 	writer := csv.NewWriter(file)
 	for _, task := range tasks {
@@ -84,68 +144,28 @@ func writeToFile() {
 	file.Close()
 }
 
-func moppleCreate(d string) error { // this will recreate the file with modified (appended) content
-	file, err := os.OpenFile(filename, os.O_APPEND|os.O_WRONLY, 0644)
-	if err != nil {
-		panic(err)
-	}
-	noOfTasks++
-	newTask := task{taskId: noOfTasks, desc: d, time: time.Now().Format("2006-01-02 15:04:05"), status: false}
-	tasks = append(tasks, newTask) // this creates a new slice with appended elements
-
-	writer := csv.NewWriter(file)
-	var inputline []string
-	inputline = append(inputline, strconv.Itoa(newTask.taskId))
-	inputline = append(inputline, newTask.desc)
-	inputline = append(inputline, newTask.time)
-	inputline = append(inputline, strconv.FormatBool(newTask.status))
-	writer.Write(inputline)
-	writer.Flush()
-	file.Close()
-
-	return errors.New("task sucessfully created")
-}
-
-func moppleDelete(taskId int) error { //-> most probably to delete the struct in the array which is easy
-	if taskId > len(tasks) {
-		return errors.New("nothing to delete")
-	}
-	tasks = remElem(taskId, tasks)
-	writeToFile()
-	return errors.New("task sucessfully deleted")
-}
-
-func remElem(t int, tslice []task) []task{
-	for idx, v := range tslice{
-		if v.taskId == t{
-			return append(tslice[:idx], tslice[idx+1:]...)
-		}
-	}
-	return  tslice
-}
-
-func moppleList() error { // lists from the slice of structs
-	w := tabwriter.NewWriter(os.Stdout, 0, 0, 1, ' ', 0)
-
-	fmt.Fprintln(w, "TaskId\tDescription\tTime\tStatus")
-	for _, task := range tasks {
-		loc := time.Now().Location()
-		gettimetype, err := time.ParseInLocation("2006-01-02 15:04:05", task.time, loc)
-		if err != nil {
-			fmt.Println("Error parsing date:", err)
-		}
-		diff := timediff.TimeDiff(gettimetype)
-		fmt.Fprintf(w, "%s\t%s\t%s\t%s\n", strconv.Itoa(task.taskId), task.desc, diff, strconv.FormatBool(task.status))
-	}
-	w.Flush() // this is critical
-	return errors.New("list of tasks retrieved")
-}
-
-func doneTask(id int){
-	for i := range tasks{
-		if tasks[i].taskId == id{
+// Marking task as Completed
+func doneTask(id int) {
+	for i := range tasks {
+		if tasks[i].taskId == id {
 			tasks[i].status = true
 		}
 	}
 	writeToFile()
+}
+
+// Helper Functions =================================================
+func removeElement(t int, tslice []task) []task {
+	for idx, v := range tslice {
+		if v.taskId == t {
+			return append(tslice[:idx], tslice[idx+1:]...)
+		}
+	}
+	return tslice
+}
+
+func errorCheck(err, want error) {
+	if err != want {
+		panic(err)
+	}
 }
